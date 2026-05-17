@@ -1,0 +1,2 @@
+-- SQLite schema for the flashcards seed database.
+-- The concrete table definition will be added in milestone 5.
