@@ -95,6 +95,20 @@ README.md
 
 Parsuje lokalną listę Oxford 5000 i zapisuje wynik do CSV.
 
+Obsługiwane wejścia:
+
+- `csv` lub `tsv` z nagłówkami zawierającymi kolumny odpowiadające `headword`, `pos`, `cefr`
+- prosty plik tab-separated bez nagłówka: `headword<TAB>pos<TAB>cefr`
+- prosty tekst liniowy: `headword pos cefr`
+
+Wyjściowe kolumny:
+
+- `headword`
+- `normalized_headword`
+- `pos`
+- `cefr`
+- `source_list`
+
 Przykładowe uruchomienie:
 
 ```bash
