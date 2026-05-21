@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Generated ETL outputs
+data_processed/*.csv
+data_processed/*.json
+db/*.db
+db/*.sqlite
+db/*.sqlite3
+
+# Raw source data
+data_raw/kaikki/*
+!data_raw/kaikki/kaikki_sample.jsonl
+
+data_raw/oxford/*.pdf
+data_raw/oxford/*.csv
+data_raw/oxford/*.tsv
+data_raw/oxford/*.txt
+!data_raw/oxford/oxford5000_sample.tsv

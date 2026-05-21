@@ -119,6 +119,38 @@ python etl/parse_oxford_5000.py --input data_raw/oxford/source.txt --output data
 
 Wzbogaca seed Oxford 5000 danymi z Kaikki / Wiktionary.
 
+Obsługiwane wejścia:
+
+- pojedynczy plik `jsonl`
+- pojedynczy plik `jsonl.gz`
+- katalog zawierający pliki `*.jsonl` lub `*.jsonl.gz`
+
+Skrypt czyta dump strumieniowo, linia po linii, i wybiera tylko angielskie rekordy pasujące do słów z seed listy.
+
+Wyjściowe kolumny:
+
+- `headword`
+- `normalized_headword`
+- `pos`
+- `cefr`
+- `definition_en`
+- `example_en`
+- `ipa`
+- `audio_url`
+- `source_definition`
+- `source_list`
+- `match_quality`
+- `notes`
+
+Raport jakości:
+
+- `data_processed/match_report.json`
+- liczba dopasowanych słów
+- liczba rekordów z definicją
+- liczba rekordów z przykładem
+- liczba rekordów z IPA
+- lista wpisów wymagających ręcznego przeglądu
+
 Przykładowe uruchomienie:
 
 ```bash
