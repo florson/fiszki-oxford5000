@@ -49,6 +49,7 @@ data_raw/
 data_processed/
 etl/
   parse_oxford_5000.py
+  extract_oxford_pdf_to_tsv.py
   enrich_from_kaikki.py
   build_seed_db.py
 db/
@@ -113,6 +114,28 @@ Przykładowe uruchomienie:
 
 ```bash
 python etl/parse_oxford_5000.py --input data_raw/oxford/source.txt --output data_processed/oxford5000.csv
+```
+
+### `etl/extract_oxford_pdf_to_tsv.py`
+
+Wyciąga wpisy bezpośrednio z PDF Oxford 5000 i zapisuje prosty TSV:
+
+- `headword`
+- `pos`
+- `cefr`
+
+Skrypt jest przygotowany pod układ wielokolumnowy jak w oficjalnym PDF i rozbija wpisy typu:
+
+- `acid n. B2, adj. C1`
+- `alert v., n., adj. C1`
+- `part-time adj./adv. B2`
+
+na osobne wiersze TSV.
+
+Przykładowe uruchomienie:
+
+```bash
+python etl/extract_oxford_pdf_to_tsv.py --input data_raw/oxford/The_Oxford_5000.pdf --output data_processed/oxford5000_pdf.tsv
 ```
 
 ### `etl/enrich_from_kaikki.py`
