@@ -98,9 +98,16 @@ Parsuje lokalną listę Oxford 5000 i zapisuje wynik do CSV.
 
 Obsługiwane wejścia:
 
+- wiele plików wejściowych naraz, np. Oxford 3000 + Oxford 5000
 - `csv` lub `tsv` z nagłówkami zawierającymi kolumny odpowiadające `headword`, `pos`, `cefr`
 - prosty plik tab-separated bez nagłówka: `headword<TAB>pos<TAB>cefr`
 - prosty tekst liniowy: `headword pos cefr`
+
+Przy wielu plikach parser:
+
+- scala rekordy do jednego seedu,
+- deduplikuje po `headword + pos`,
+- łączy `source_list`, np. `Oxford 3000; Oxford 5000`.
 
 Wyjściowe kolumny:
 
@@ -113,7 +120,7 @@ Wyjściowe kolumny:
 Przykładowe uruchomienie:
 
 ```bash
-python etl/parse_oxford_5000.py --input data_raw/oxford/source.txt --output data_processed/oxford5000.csv
+python etl/parse_oxford_5000.py --input data_processed/oxford3000_pdf.tsv data_processed/oxford5000_pdf.tsv --output data_processed/oxford5000.csv
 ```
 
 ### `etl/extract_oxford_pdf_to_tsv.py`
@@ -187,8 +194,14 @@ Buduje finalną bazę SQLite na podstawie przetworzonego CSV.
 Przykładowe uruchomienie:
 
 ```bash
-python etl/build_seed_db.py --input data_processed/entries_enriched.csv --schema db/schema.sql --db db/app.db
+python etl/build_seed_db.py
 ```
+
+Domyślne ścieżki:
+
+- wejście: `data_processed/entries_enriched.csv`
+- schemat: `db/schema.sql`
+- baza wyjściowa: `db/app.db`
 
 ## Status
 

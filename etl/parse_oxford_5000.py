@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parse a local Oxford 5000 source file into a normalized CSV."""
+"""Parse local Oxford source files into a normalized seed CSV."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ OUTPUT_COLUMNS = [
     "cefr",
     "source_list",
 ]
-DEFAULT_SOURCE_LIST = "Oxford 5000"
+DEFAULT_SOURCE_LIST = "Oxford"
 CEFR_LEVELS = {"A1", "A2", "B1", "B2", "C1", "C2"}
 POS_MAP = {
     "n": "noun",
@@ -65,9 +65,14 @@ class ParseError(ValueError):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Parse Oxford 5000 source data into a normalized CSV."
+        description="Parse Oxford source data into a normalized CSV."
     )
-    parser.add_argument("--input", required=True, help="Path to the Oxford source file.")
+    parser.add_argument(
+        "--input",
+        required=True,
+        nargs="+",
+        help="One or more Oxford source files.",
+    )
     parser.add_argument(
         "--output",
         default="data_processed/oxford5000.csv",
@@ -76,7 +81,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source-list",
         default=DEFAULT_SOURCE_LIST,
-        help="Value written to the source_list output column.",
+        help="Fallback source_list value when it cannot be inferred from the file name.",
     )
     parser.add_argument(
         "--log-level",
@@ -150,12 +155,52 @@ def sniff_delimiter(sample: str) -> str | None:
     return None
 
 
+def infer_source_list(input_path: Path, fallback: str) -> str:
+    name = input_path.name.lower()
+    if "3000" in name:
+        return "Oxford 3000"
+    if "5000" in name:
+        return "Oxford 5000"
+    return fallback
+
+
 def load_records(input_path: Path, source_list: str) -> list[dict[str, str]]:
     sample = input_path.read_text(encoding="utf-8-sig", errors="replace")
     delimiter = sniff_delimiter(sample[:4096])
     if delimiter:
         return list(parse_delimited_text(sample, delimiter, source_list))
     return list(parse_plain_text(sample.splitlines(), source_list))
+
+
+def merge_records(all_records: list[dict[str, str]]) -> list[dict[str, str]]:
+    merged: dict[tuple[str, str], dict[str, str]] = {}
+
+    for record in all_records:
+        key = (record["normalized_headword"], record["pos"])
+        existing = merged.get(key)
+        if existing is None:
+            merged[key] = dict(record)
+            continue
+
+        merged_sources = split_source_list(existing["source_list"]) | split_source_list(
+            record["source_list"]
+        )
+        existing["source_list"] = "; ".join(sorted(merged_sources))
+
+        if existing["cefr"] != record["cefr"]:
+            LOGGER.warning(
+                "Conflicting CEFR for %s (%s): keeping %s, skipping %s",
+                existing["headword"],
+                existing["pos"],
+                existing["cefr"],
+                record["cefr"],
+            )
+
+    return list(merged.values())
+
+
+def split_source_list(value: str) -> set[str]:
+    return {part.strip() for part in value.split(";") if part.strip()}
 
 
 def parse_delimited_text(
@@ -293,29 +338,37 @@ def main() -> int:
     args = parse_args()
     configure_logging(args.log_level)
 
-    input_path = Path(args.input)
+    input_paths = [Path(value) for value in args.input]
     output_path = Path(args.output)
 
-    LOGGER.info("Parsing Oxford 5000 source")
-    LOGGER.info("Input: %s", input_path)
+    LOGGER.info("Parsing Oxford source data")
+    LOGGER.info("Inputs: %s", ", ".join(str(path) for path in input_paths))
     LOGGER.info("Output: %s", output_path)
 
-    if not input_path.exists():
-        LOGGER.error("Input file does not exist: %s", input_path)
+    missing_paths = [path for path in input_paths if not path.exists()]
+    if missing_paths:
+        for path in missing_paths:
+            LOGGER.error("Input file does not exist: %s", path)
         return 1
 
     try:
-        records = load_records(input_path, args.source_list)
+        all_records: list[dict[str, str]] = []
+        for input_path in input_paths:
+            source_list = infer_source_list(input_path, args.source_list)
+            records = load_records(input_path, source_list)
+            LOGGER.info("Parsed %d records from %s", len(records), input_path)
+            all_records.extend(records)
+        records = merge_records(all_records)
     except (OSError, ParseError, csv.Error) as exc:
-        LOGGER.error("Failed to parse %s: %s", input_path, exc)
+        LOGGER.error("Failed to parse Oxford input: %s", exc)
         return 1
 
     if not records:
-        LOGGER.error("No records parsed from input file: %s", input_path)
+        LOGGER.error("No records parsed from input files")
         return 1
 
     write_csv(records, output_path)
-    LOGGER.info("Parsed %d records", len(records))
+    LOGGER.info("Wrote %d merged records", len(records))
     return 0
 
 
